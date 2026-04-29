@@ -233,15 +233,15 @@ STATE_COORDS = {
 
 @st.cache_data(show_spinner="Loading price data...")
 def load_data():
-    item    = pd.read_parquet("https://storage.data.gov.my/pricecatcher/lookup_item.parquet")
-    premise = pd.read_parquet("https://storage.data.gov.my/pricecatcher/lookup_premise.parquet")
+    item    = pd.read_parquet("https://storage.data.gov.my/pricecatcher/lookup_item.parquet", dtype_backend="numpy_nullable")
+    premise = pd.read_parquet("https://storage.data.gov.my/pricecatcher/lookup_premise.parquet", dtype_backend="numpy_nullable")
     item_clean    = item.dropna(subset=["item_code","item","unit","item_group","item_category"]).copy()
     premise_clean = premise.dropna(subset=["premise_code","premise","premise_type","state","district"]).copy()
 
     frames = []
     for month in MONTHS:
         url  = f"https://storage.data.gov.my/pricecatcher/pricecatcher_{month}.parquet"
-        temp = pd.read_parquet(url)
+        temp = pd.read_parquet(url, dtype_backend="numpy_nullable")
         temp["date"]  = pd.to_datetime(temp["date"])
         temp["month"] = temp["date"].dt.to_period("M").astype(str)
         frames.append(temp)
