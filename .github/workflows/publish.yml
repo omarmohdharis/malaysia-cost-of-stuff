@@ -25,7 +25,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install Python dependencies
-        run: pip install pandas pyarrow plotly numpy
+        run: pip install jupyter nbformat pyyaml pandas pyarrow plotly numpy
 
       - name: Set up Quarto
         uses: quarto-dev/quarto-actions/setup@v2
