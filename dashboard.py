@@ -9,6 +9,7 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from sklearn.linear_model import Ridge
+from datetime import date, datetime
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -200,13 +201,20 @@ BASKET_CATEGORIES = [
     "BAWANG", "SAYUR-SAYURAN", "BAHAN LAUT", "IKAN DARAT", "BUAH-BUAHAN"
 ]
 
-MONTHS = ["2025-11", "2025-12", "2026-01", "2026-02", "2026-03", "2026-04"]
+def _last_n_months(n: int = 6) -> list:
+    y, m = date.today().year, date.today().month - 1
+    if m == 0:
+        m, y = 12, y - 1
+    months = []
+    for _ in range(n):
+        months.append(f"{y}-{m:02d}")
+        m -= 1
+        if m == 0:
+            m, y = 12, y - 1
+    return list(reversed(months))
 
-MONTH_LABELS = {
-    "2025-11": "Nov 2025", "2025-12": "Dec 2025",
-    "2026-01": "Jan 2026", "2026-02": "Feb 2026",
-    "2026-03": "Mar 2026", "2026-04": "Apr 2026",
-}
+MONTHS = _last_n_months(6)
+MONTH_LABELS = {m: datetime.strptime(m, "%Y-%m").strftime("%b %Y") for m in MONTHS}
 
 CATEGORY_LABELS = {
     "AYAM": "Chicken 🐔", "TELUR": "Eggs 🥚", "BERAS": "Rice 🍚",
@@ -402,17 +410,18 @@ def compute_basket_totals(_cat_prices, quantities_tuple):
 
 
 def predict_next_month(_model, features, dummy_cols, model_df):
-    """Generate May 2026 predictions for all state×premise_type combos."""
+    """Generate next-month predictions for all state×premise_type combos."""
     latest = model_df[model_df["month"] == model_df["month"].max()].copy()
-    next_month_num = 5
-    next_year      = 2026
+    latest_dt = datetime.strptime(model_df["month"].max(), "%Y-%m")
+    next_month_num = latest_dt.month % 12 + 1
+    next_year      = latest_dt.year + (1 if latest_dt.month == 12 else 0)
 
     rows = []
     for _, row in latest.iterrows():
         r = {
             "state":        row["state"],
             "premise_type": row["premise_type"],
-            "month":        "2026-05",
+            "month":        f"{next_year}-{next_month_num:02d}",
             "year":         next_year,
             "month_num":    next_month_num,
             "month_sin":    np.sin(2 * np.pi * next_month_num / 12),
@@ -477,7 +486,8 @@ with st.sidebar:
     )
 
     st.markdown("---")
-    st.markdown("<div style='color:rgba(255,255,255,0.35);font-size:0.75rem;line-height:1.6'>Data from <b style='color:rgba(255,255,255,0.6)'>data.gov.my</b><br>PriceCatcher · Nov 2025 – Apr 2026<br>Model: Ridge Regression · MAPE 3.15%</div>", unsafe_allow_html=True)
+    date_range = f"{MONTH_LABELS[MONTHS[0]]} – {MONTH_LABELS[MONTHS[-1]]}"
+    st.markdown(f"<div style='color:rgba(255,255,255,0.35);font-size:0.75rem;line-height:1.6'>Data from <b style='color:rgba(255,255,255,0.6)'>data.gov.my</b><br>PriceCatcher · {date_range}<br>Model: Ridge Regression · MAPE 3.15%</div>", unsafe_allow_html=True)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # FILTER DATA
@@ -768,7 +778,8 @@ with tab2:
 # ═══════════════════════════════════════════════════════════════════
 with tab3:
     st.markdown('<div class="section-header">Next Month Price Forecast</div>', unsafe_allow_html=True)
-    st.markdown('<div class="section-sub">Ridge Regression model predictions for May 2026 · MAPE 3.15%</div>', unsafe_allow_html=True)
+    next_label = MONTH_LABELS.get(f"{date.today().year}-{date.today().month:02d}", "Next Month")
+    st.markdown(f'<div class="section-sub">Ridge Regression model predictions for {next_label} · MAPE 3.15%</div>', unsafe_allow_html=True)
 
     st.markdown("""
     <div class="info-box">

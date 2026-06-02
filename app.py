@@ -8,9 +8,9 @@ That's affordability information, not just price comparison.
 """
 
 import streamlit as st
-import numpy as np
+import pandas as pd
 import plotly.graph_objects as go
-import warnings
+from datetime import date
 
 # ── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -99,7 +99,19 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif; }
 # ─────────────────────────────────────────────────────────────────────────────
 # CONSTANTS
 # ─────────────────────────────────────────────────────────────────────────────
-MONTHS = ["2025-11", "2025-12", "2026-01", "2026-02", "2026-03", "2026-04"]
+def _last_n_months(n: int = 6) -> list:
+    y, m = date.today().year, date.today().month - 1
+    if m == 0:
+        m, y = 12, y - 1
+    months = []
+    for _ in range(n):
+        months.append(f"{y}-{m:02d}")
+        m -= 1
+        if m == 0:
+            m, y = 12, y - 1
+    return list(reversed(months))
+
+MONTHS = _last_n_months(6)
 CONSUMER_CATEGORIES = [
     "AYAM", "TELUR", "BERAS", "MINYAK DAN LEMAK",
     "BAWANG", "SAYUR-SAYURAN", "BAHAN LAUT", "IKAN DARAT",
